@@ -30,7 +30,7 @@ export default function App() {
   const [screen, setScreen] = useState("home");
   const [bookInput, setBookInput] = useState("");
   const [suggestions, setSuggestions] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [, setLoading] = useState(false);
   const [loadingMsg, setLoadingMsg] = useState("");
   const [currentBook, setCurrentBook] = useState(null);
   const [habits, setHabits] = useState([]);
@@ -81,36 +81,14 @@ export default function App() {
     }, 2000);
 
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
-          messages: [{
-            role: "user",
-            content: `You are a habit coach. For the book "${bookTitle}", generate a practical daily/weekly habit tracker plan.
-
-Respond ONLY with a valid JSON object in this exact format, no markdown, no extra text:
-{
-  "principle": "One memorable core thesis of the book in 1-2 sentences.",
-  "habits": [
-    { "id": "1", "title": "Habit title", "description": "Why this habit, tied to the book", "frequency": "daily", "icon": "🔥" },
-    { "id": "2", "title": "Habit title", "description": "Why this habit, tied to the book", "frequency": "daily", "icon": "📝" },
-    { "id": "3", "title": "Habit title", "description": "Why this habit, tied to the book", "frequency": "daily", "icon": "🎯" },
-    { "id": "4", "title": "Habit title", "description": "Why this habit, tied to the book", "frequency": "weekly", "icon": "🧘" },
-    { "id": "5", "title": "Habit title", "description": "Why this habit, tied to the book", "frequency": "weekly", "icon": "💡" },
-    { "id": "6", "title": "Habit title", "description": "Why this habit, tied to the book", "frequency": "one-time", "icon": "⭐" }
-  ]
-}
-
-Use relevant emojis. Frequency must be "daily", "weekly", or "one-time". Make habits specific and actionable.`
-          }]
-        })
+        body: JSON.stringify({ bookTitle })
       });
 
       const data = await res.json();
-      const text = data.content?.find(b => b.type === "text")?.text || "";
+      const text = data.content && data.content.find(b => b.type === "text") ? data.content.find(b => b.type === "text").text : "";
       const clean = text.replace(/```json|```/g, "").trim();
       const parsed = JSON.parse(clean);
 
@@ -170,7 +148,6 @@ Use relevant emojis. Frequency must be "daily", "weekly", or "one-time". Make ha
       position: "relative",
       overflow: "hidden"
     }}>
-      {/* Ambient glow */}
       <div style={{
         position: "fixed", top: -100, left: "50%", transform: "translateX(-50%)",
         width: 300, height: 300, borderRadius: "50%",
@@ -180,14 +157,13 @@ Use relevant emojis. Frequency must be "daily", "weekly", or "one-time". Make ha
 
       {screen === "loading" && (
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "100vh", gap: 24, padding: 32 }}>
-          <div style={{ fontSize: 48, animation: "spin 2s linear infinite" }}>📚</div>
+          <div style={{ fontSize: 48 }}>📚</div>
           <div style={{ fontSize: 16, color: "#c4a464", textAlign: "center", letterSpacing: 1 }}>{loadingMsg}</div>
           <div style={{ width: 120, height: 2, background: "#1e1e28", borderRadius: 2, overflow: "hidden" }}>
-            <div style={{ height: "100%", background: "#c4a464", animation: "progress 2s ease-in-out infinite", borderRadius: 2 }} />
+            <div style={{ height: "100%", background: "#c4a464", width: "60%", borderRadius: 2 }} />
           </div>
           <style>{`
             @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-            @keyframes progress { 0% { width: 0%; } 50% { width: 80%; } 100% { width: 100%; } }
           `}</style>
         </div>
       )}
@@ -267,7 +243,6 @@ Use relevant emojis. Frequency must be "daily", "weekly", or "one-time". Make ha
 
       {screen === "tracker" && (
         <div style={{ padding: "0 0 80px", position: "relative", zIndex: 1 }}>
-          {/* Header */}
           <div style={{ padding: "40px 24px 20px", borderBottom: "1px solid #1e1e28" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <div>
@@ -280,12 +255,10 @@ Use relevant emojis. Frequency must be "daily", "weekly", or "one-time". Make ha
               </div>
             </div>
 
-            {/* Core principle */}
             <div style={{ marginTop: 16, padding: "12px 14px", background: "#14141c", borderLeft: "2px solid #c4a464", borderRadius: "0 6px 6px 0" }}>
               <p style={{ fontSize: 13, color: "#a09080", margin: 0, lineHeight: 1.5, fontStyle: "italic" }}>"{principle}"</p>
             </div>
 
-            {/* Daily progress */}
             {dailyHabits.length > 0 && (
               <div style={{ marginTop: 16 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
@@ -299,13 +272,12 @@ Use relevant emojis. Frequency must be "daily", "weekly", or "one-time". Make ha
             )}
           </div>
 
-          {/* Habits */}
           <div style={{ padding: "0 24px" }}>
             {[{ label: "Daily Habits", list: dailyHabits }, { label: "Weekly Habits", list: weeklyHabits }, { label: "One-Time Actions", list: onetimeHabits }]
               .filter(g => g.list.length > 0)
               .map(group => (
                 <div key={group.label} style={{ marginTop: 28 }}>
-                  <p style={{ fontSize: 10, letterSpacing: 2, color: "#4a4a58", textTransform: "uppercase", marginBottom: 12, margin: "0 0 12px" }}>{group.label}</p>
+                  <p style={{ fontSize: 10, letterSpacing: 2, color: "#4a4a58", textTransform: "uppercase", margin: "0 0 12px" }}>{group.label}</p>
                   <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                     {group.list.map(h => {
                       const done = todayCompletions[h.id];
@@ -341,7 +313,6 @@ Use relevant emojis. Frequency must be "daily", "weekly", or "one-time". Make ha
               ))}
           </div>
 
-          {/* New book button */}
           <div style={{ padding: "32px 24px 0" }}>
             <button onClick={resetApp} style={{
               width: "100%", padding: "12px", background: "transparent",
